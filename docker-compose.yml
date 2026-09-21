@@ -1,0 +1,8 @@
+services: {}
+
+networks:
+  project-network:
+    driver: bridge
+
+  floci-net:
+    external: true
