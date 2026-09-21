@@ -54,3 +54,10 @@ ad-fraud-platform/
 ├── analytics/
 ├── tests/
 └── docs/
+
+## Git Workflow
+
+### Check repository status
+
+```powershell
+git status
