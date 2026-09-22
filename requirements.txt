@@ -1,0 +1,17 @@
+# Data / ML
+pandas
+
+# Simulator
+# Dependencies will be added here when needed
+
+# Kafka
+# Dependencies will be added here when needed
+
+# Spark
+# Dependencies will be added here when needed
+
+# API
+# Dependencies will be added here when needed
+
+# Development / Testing
+# pytest
