@@ -19,3 +19,6 @@ Thumbs.db
 # Local datasets
 data/raw/*
 data/processed/*
+
+# Saved Models
+ml/models/*
