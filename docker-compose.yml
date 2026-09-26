@@ -8,7 +8,7 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
 
-      # Configured two listeners: INTERNAL for docker containers, EXTERNAL for host machine
+      # INTERNAL (9093) for Docker containers, EXTERNAL (9092) for host machine
       KAFKA_LISTENERS: INTERNAL://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9094
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://ad-fraud-kafka:9093,EXTERNAL://localhost:9092
 
@@ -26,13 +26,25 @@ services:
 
     networks:
       - ad-fraud-net
+      - floci-net
+
+  spark:
+    image: apache/spark:3.5.0-python3
+    container_name: ad-fraud-spark
+    command: tail -f /dev/null
+    environment:
+      - AWS_ACCESS_KEY_ID=floci
+      - AWS_SECRET_ACCESS_KEY=floci
+    volumes:
+      - ./spark:/opt/spark-apps
+      - ./ml:/opt/ml
+    networks:
+      - ad-fraud-net
+      - floci-net
 
 networks:
   ad-fraud-net:
     name: ad-fraud-net
-
-  project-network:
-    driver: bridge
 
   floci-net:
     external: true
