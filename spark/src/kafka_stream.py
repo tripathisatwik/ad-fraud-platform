@@ -19,8 +19,10 @@ spark = (
     .appName("AdFraudKafkaStream")
     .getOrCreate()
 )
+
 # Lower Spark log level to ERROR or WARN
 spark.sparkContext.setLogLevel("ERROR")
+spark.sparkContext.setLogLevel("WARN")
 
 # Suppress underlying Kafka/Log4j logger output
 log4j = spark._jvm.org.apache.log4j
