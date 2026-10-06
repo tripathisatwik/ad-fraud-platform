@@ -273,7 +273,6 @@ def _prune_click_times(click_times, now):
 def _empty_feature_record():
     return {feature: None for feature in FEATURE_COLUMNS}
 
-
 def process_scope(
     key,
     pdf_iter: Iterator[pd.DataFrame],
@@ -436,23 +435,30 @@ def process_output_batch(batch_df, batch_id):
         .sort_values(["event_time", "event_id"])
     )
 
-    print(f"\n--- FEATURE BATCH {batch_id} ({len(grouped)} events) ---")
+    # Real-time XGBoost inference (under process)
+    inference = get_inference()
+    predictions = inference.predict(grouped)
+
     print(
-        grouped[
+        f"\n--- PREDICTION BATCH {batch_id} "
+        f"({len(predictions)} events) ---"
+    )
+
+    print(
+        predictions[
             [
                 "event_id",
                 "timestamp",
                 "ip",
                 "app",
                 "device",
-                "os",
-                "channel",
-                *FEATURE_COLUMNS,
+                "fraud_probability",
+                "prediction",
             ]
-        ].head(20).to_string(index=False)
+        ].to_string(index=False)
     )
-    print()
 
+    print()
 
 query = (
     stateful_features
