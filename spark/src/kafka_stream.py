@@ -435,29 +435,47 @@ def process_output_batch(batch_df, batch_id):
         .sort_values(["event_time", "event_id"])
     )
 
-    # Real-time XGBoost inference (under process)
-    inference = get_inference()
-    predictions = inference.predict(grouped)
-
-    print(
-        f"\n--- PREDICTION BATCH {batch_id} "
-        f"({len(predictions)} events) ---"
+    spark_grouped_df = spark.createDataFrame(grouped)
+    (
+        spark_grouped_df
+        .selectExpr(
+            "to_json(struct(*)) AS value"
+        )
+        .write
+        .format("kafka")
+        .option(
+            "kafka.bootstrap.servers",
+            KAFKA_BOOTSTRAP_SERVERS,
+        )
+        .option(
+            "topic",
+            "prediction-input",
+        )
+        .save()
     )
 
     print(
-        predictions[
+        f"\n--- FEATURE BATCH {batch_id} "
+        f"({len(grouped)} events) ---"
+    )
+
+    print(grouped.to_string(index=False))
+
+    print(f"\n--- FEATURE BATCH {batch_id} ({len(grouped)} events) ---")
+    print(
+        grouped[
             [
                 "event_id",
                 "timestamp",
                 "ip",
                 "app",
                 "device",
-                "fraud_probability",
-                "prediction",
+                "os",
+                "channel",
+                *FEATURE_COLUMNS,
             ]
-        ].to_string(index=False)
+        ].head(20).to_string(index=False)
     )
-
     print()
 
 query = (
@@ -469,5 +487,4 @@ query = (
     .start()
 )
 
-query.awaitTermination()
 query.awaitTermination()
