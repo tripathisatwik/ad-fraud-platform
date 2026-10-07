@@ -26,17 +26,17 @@ A real-time data engineering and machine learning platform that simulates digita
 
 ## 🚀 Project Status & Progress
 
-- [x] **Project Setup:** Dockerized environment and folder structure.
-- [x] **Data Simulation:** Event generator for ad clicks.
-- [x] **Machine Learning Baseline:** 
-  - [x] Point-in-time feature engineering (preventing data leakage).
-  - [x] Handling extreme class imbalance (0.2% fraud rate) using `scale_pos_weight`.
-  - [x] Chronological train/val/test splits to simulate real-world concept drift.
-  - [x] XGBoost model training and threshold optimization.
-- [ ] **Streaming Pipeline:** Kafka producers and Spark Structured Streaming consumers.
-- [ ] **Data Lake:** S3 integration and Delta/Iceberg table formatting.
-- [ ] **API & Inference:** FastAPI endpoints for real-time scoring.
-- [ ] **Analytics:** Athena/Glue integration for batch reporting.
+- **Project Setup:** Dockerized environment and folder structure.
+-  **Data Simulation:** Event generator for ad clicks.
+-  **Machine Learning Baseline:** 
+  -  Point-in-time feature engineering (preventing data leakage).
+  -  Handling extreme class imbalance (0.2% fraud rate) using `scale_pos_weight`.
+  -  Chronological train/val/test splits to simulate real-world concept drift.
+  -  XGBoost model training and threshold optimization.
+-  **Streaming Pipeline:** Kafka producers and Spark Structured Streaming consumers.
+- **Data Lake:** S3 integration and Delta/Iceberg table formatting.
+- **API & Inference:** FastAPI endpoints for real-time scoring.
+- **Analytics:** Athena/Glue integration for batch reporting.
 
 ## 🧠 Machine Learning Architecture
 
