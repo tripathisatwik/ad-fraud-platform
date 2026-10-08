@@ -5,6 +5,7 @@ services:
     ports:
       - "9092:9092"
     environment:
+      PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/kafka/bin"
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
 
@@ -38,6 +39,21 @@ services:
     volumes:
       - ./spark:/opt/spark-apps
       - ./ml:/opt/ml
+    networks:
+      - ad-fraud-net
+      - floci-net
+
+  inference:
+    build:
+      context: .
+      dockerfile: kafka/Dockerfile
+    container_name: ad-fraud-inference
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: ad-fraud-kafka:9093
+    volumes:
+      - ./ml:/opt/ml:ro
+    depends_on:
+      - kafka
     networks:
       - ad-fraud-net
       - floci-net
