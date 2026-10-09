@@ -53,8 +53,6 @@ for message in consumer:
     try:
         event = message.value
 
-        # Convert the single Kafka event into the DataFrame
-        # expected by ml.inference.AdFraudInference.predict().
         df = pd.DataFrame([event])
 
         predictions = inference.predict(df)
