@@ -58,6 +58,31 @@ services:
       - ad-fraud-net
       - floci-net
 
+  s3-sink:
+    build:
+      context: .
+      dockerfile: aws/Dockerfile
+    container_name: ad-fraud-s3-sink
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: ad-fraud-kafka:9093
+      KAFKA_TOPIC: predictions
+      KAFKA_GROUP_ID: prediction-s3-sink
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://floci:4566
+      S3_BUCKET: ad-fraud-data
+      S3_PREFIX: predictions
+      S3_BATCH_SIZE: "100"
+      S3_FLUSH_INTERVAL_SECONDS: "10"
+    depends_on:
+      - kafka
+      - inference
+    networks:
+      - ad-fraud-net
+      - floci-net
+    restart: unless-stopped
+
 networks:
   ad-fraud-net:
     name: ad-fraud-net
