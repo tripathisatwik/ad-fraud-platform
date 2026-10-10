@@ -1,0 +1,28 @@
+{
+  "Name": "predictions",
+  "Description": "XGBoost ad fraud predictions stored as JSON Lines in S3",
+  "TableType": "EXTERNAL_TABLE",
+  "Parameters": {
+    "classification": "json"
+  },
+  "StorageDescriptor": {
+    "Location": "s3://ad-fraud-data/predictions/",
+    "InputFormat": "org.apache.hadoop.mapred.TextInputFormat",
+    "OutputFormat": "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat",
+    "SerdeInfo": {
+      "SerializationLibrary": "org.openx.data.jsonserde.JsonSerDe"
+    },
+    "Columns": [
+      {"Name": "event_id", "Type": "string"},
+      {"Name": "timestamp", "Type": "string"},
+      {"Name": "event_time", "Type": "string"},
+      {"Name": "ip", "Type": "int"},
+      {"Name": "app", "Type": "int"},
+      {"Name": "device", "Type": "int"},
+      {"Name": "os", "Type": "int"},
+      {"Name": "channel", "Type": "int"},
+      {"Name": "fraud_probability", "Type": "double"},
+      {"Name": "prediction", "Type": "int"}
+    ]
+  }
+}
