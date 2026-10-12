@@ -35,7 +35,7 @@ log4j.LogManager.getLogger("org.apache.spark.sql.execution.streaming").setLevel(
 
 KAFKA_BOOTSTRAP_SERVERS = "ad-fraud-kafka:9093"
 KAFKA_TOPIC = "ad-events"
-CHECKPOINT_LOCATION = "/tmp/ad-fraud-spark-stateful-checkpoint"
+CHECKPOINT_LOCATION = "/tmp/ad-fraud-spark-stateful-checkpoint-v2"
 
 event_schema = StructType([
     StructField("event_id", StringType(), True),

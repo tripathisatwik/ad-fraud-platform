@@ -1,0 +1,3 @@
+{"event_id":"c9822814-a988-4f00-9245-59ef2a5296c2","timestamp":"2026-10-11T17:08:20.944920+00:00","event_time":"2026-10-11T17:08:20.944920+00:00","ip":95006,"app":3,"device":1,"os":13,"channel":211,"fraud_probability":0.00020009645959362388,"prediction":0}
+{"event_id":"67ac5024-088a-4cc3-8412-3104b97ebfc5","timestamp":"2026-10-11T17:08:25.968593+00:00","event_time":"2026-10-11T17:08:25.968593+00:00","ip":64609,"app":9,"device":1,"os":19,"channel":215,"fraud_probability":0.0014393560122698545,"prediction":0}
+{"event_id":"0f7a18ff-7117-4058-a23b-0ca962af8850","timestamp":"2026-10-11T17:08:26.977881+00:00","event_time":"2026-10-11T17:08:26.977881+00:00","ip":93780,"app":15,"device":1,"os":13,"channel":412,"fraud_probability":0.0004925653338432312,"prediction":0}

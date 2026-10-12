@@ -8,23 +8,16 @@ services:
       PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/kafka/bin"
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-
-      # INTERNAL (9093) for Docker containers, EXTERNAL (9092) for host machine
       KAFKA_LISTENERS: INTERNAL://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9094
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://ad-fraud-kafka:9093,EXTERNAL://localhost:9092
-
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@ad-fraud-kafka:9094
-
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-
     networks:
       - ad-fraud-net
       - floci-net
@@ -49,7 +42,7 @@ services:
       dockerfile: kafka/Dockerfile
     container_name: ad-fraud-inference
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: ad-fraud-kafka:9093
+      - KAFKA_BOOTSTRAP_SERVERS
     volumes:
       - ./ml:/opt/ml:ro
     depends_on:
@@ -64,20 +57,45 @@ services:
       dockerfile: aws/Dockerfile
     container_name: ad-fraud-s3-sink
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: ad-fraud-kafka:9093
-      KAFKA_TOPIC: predictions
-      KAFKA_GROUP_ID: prediction-s3-sink
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AWS_DEFAULT_REGION: us-east-1
-      AWS_ENDPOINT_URL: http://floci:4566
-      S3_BUCKET: ad-fraud-data
-      S3_PREFIX: predictions
-      S3_BATCH_SIZE: "100"
-      S3_FLUSH_INTERVAL_SECONDS: "10"
+      - KAFKA_BOOTSTRAP_SERVERS
+      - KAFKA_TOPIC
+      - KAFKA_GROUP_ID
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_DEFAULT_REGION
+      - AWS_ENDPOINT_URL=http://floci:4566
+      - S3_BUCKET
+      - S3_PREFIX
+      - S3_BATCH_SIZE=100
+      - S3_FLUSH_INTERVAL_SECONDS=10
     depends_on:
       - kafka
       - inference
+    networks:
+      - ad-fraud-net
+      - floci-net
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    container_name: ad-fraud-dashboard
+    ports:
+      - "${DASHBOARD_PORT}:${DASHBOARD_PORT}"
+    environment:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_DEFAULT_REGION
+      - AWS_ENDPOINT_URL=http://floci:4566
+      - S3_BUCKET
+      - S3_PREFIX=predictions/
+      - FRAUD_THRESHOLD
+      - DASHBOARD_PORT
+      - DASHBOARD_MAX_OBJECTS
+      - DASHBOARD_MAX_RECORDS
+    depends_on:
+      - s3-sink
     networks:
       - ad-fraud-net
       - floci-net
