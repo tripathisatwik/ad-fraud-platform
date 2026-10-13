@@ -22,3 +22,5 @@ data/processed/*
 
 # Saved Models
 ml/models/*
+
+extras/*

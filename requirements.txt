@@ -2,6 +2,7 @@
 # Data / ML
 # ==============================
 pandas
+numpy
 openpyxl
 xgboost
 scikit-learn
