@@ -25,35 +25,75 @@ s3 = boto3.client("s3", endpoint_url=AWS_ENDPOINT_URL, region_name=AWS_REGION,
     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "test"))
 
 def load_predictions():
-    response = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=S3_PREFIX)
-    objects = response.get("Contents", [])
-    while response.get("IsTruncated") and len(objects) < MAX_OBJECTS * 4:
-        response = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=S3_PREFIX,
-            ContinuationToken=response["NextContinuationToken"])
-        objects.extend(response.get("Contents", []))
-    objects = sorted(objects, key=lambda item: item["LastModified"], reverse=True)[:MAX_OBJECTS]
-    records, objects_read = [], 0
+    # Retrieve every S3 object under the prediction prefix.
+    paginator = s3.get_paginator("list_objects_v2")
+    objects = []
+    for page in paginator.paginate(
+        Bucket=S3_BUCKET,
+        Prefix=S3_PREFIX,
+    ):
+        objects.extend(page.get("Contents", []))
+
+    # Process newest objects first.
+    objects.sort(
+        key=lambda item: item["LastModified"],
+        reverse=True,
+    )
+
+    records = []
+    objects_read = 0
+
     for item in objects:
         if len(records) >= MAX_RECORDS:
             break
+
         try:
-            obj = s3.get_object(Bucket=S3_BUCKET, Key=item["Key"])
-            payload = obj["Body"].read().decode("utf-8", errors="replace")
+            obj = s3.get_object(
+                Bucket=S3_BUCKET,
+                Key=item["Key"],
+            )
+            payload = obj["Body"].read().decode(
+                "utf-8",
+                errors="replace",
+            )
             objects_read += 1
+
             for line in payload.splitlines():
                 if not line.strip():
                     continue
+
                 try:
                     record = json.loads(line)
-                    if "fraud_probability" in record and "prediction" in record:
+
+                    if (
+                        "fraud_probability" in record
+                        and "prediction" in record
+                    ):
                         records.append(record)
+
                         if len(records) >= MAX_RECORDS:
                             break
+
                 except json.JSONDecodeError:
-                    log.warning("Skipping malformed JSON line in %s", item["Key"])
+                    log.warning(
+                        "Skipping malformed JSON line in %s",
+                        item["Key"],
+                    )
+
         except (BotoCoreError, ClientError) as exc:
-            log.warning("Could not read S3 object %s: %s", item["Key"], exc)
-    records.sort(key=lambda r: str(r.get("timestamp", r.get("event_time", ""))), reverse=True)
+            log.warning(
+                "Could not read S3 object %s: %s",
+                item["Key"],
+                exc,
+            )
+
+    records.sort(
+        key=lambda r: str(
+            r.get("timestamp", r.get("event_time", ""))
+        ),
+        reverse=True,
+    )
+
     return records, objects_read
 
 def esc(value):
