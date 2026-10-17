@@ -6,6 +6,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, concat_ws, from_json, lit, to_timestamp
 from pyspark.sql.streaming.state import GroupState
 from pyspark.sql.types import (
+    BooleanType,
     DoubleType,
     IntegerType,
     LongType,
@@ -164,6 +165,7 @@ OUTPUT_COLUMNS = [
     "channel",
     "scope_type",
     "scope_key",
+    "is_late_event",
     *FEATURE_COLUMNS,
 ]
 
@@ -178,6 +180,7 @@ OUTPUT_SCHEMA = StructType([
     StructField("channel", IntegerType(), True),
     StructField("scope_type", StringType(), False),
     StructField("scope_key", StringType(), False),
+    StructField("is_late_event", BooleanType(), False),
     StructField("hour", IntegerType(), True),
     StructField("day_of_week", IntegerType(), True),
     StructField("ip_clicks_before", LongType(), True),
@@ -297,6 +300,12 @@ def process_scope(
         timestamp = row["timestamp"]
         event_time = pd.Timestamp(row["event_time"])
 
+        last_click = current["last_click"]
+        is_late_event = (
+            last_click is not None
+            and event_time < pd.Timestamp(last_click)
+        )
+
         ip = int(row["ip"])
         app = int(row["app"])
         device = int(row["device"])
@@ -367,14 +376,23 @@ def process_scope(
             "channel": channel,
             "scope_type": scope_type,
             "scope_key": scope_key,
+            "is_late_event": bool(is_late_event),
         }
         result.update(features)
         results.append(result)
 
-        # Update state after generating features for this event
+        # Late events are emitted for downstream filtering, but must not
+        # alter this scope's chronological state.
+        if is_late_event:
+            continue
+
+        # Update state only for events in nondecreasing event-time order.
         current["count"] += 1
+
         if current["first_seen"] is None:
             current["first_seen"] = event_time.to_pydatetime()
+
+        # Since late events are skipped, last_click cannot move backwards.
         current["last_click"] = event_time.to_pydatetime()
 
         if scope_type == SCOPE_IP:
@@ -384,7 +402,6 @@ def process_scope(
 
         if scope_type in {SCOPE_IP, SCOPE_IP_APP}:
             current["click_times"].append(event_time)
-            current["click_times"].sort()
             _prune_click_times(current["click_times"], event_time)
 
     state.update(_encode_state(current))
@@ -416,6 +433,7 @@ def process_output_batch(batch_df, batch_id):
 
     # Combine partial records from all 8 scopes back into one row per event
     aggregation = {feature: "max" for feature in FEATURE_COLUMNS}
+    aggregation["is_late_event"] = "max"
     grouped = (
         pdf
         .groupby(

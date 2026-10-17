@@ -53,6 +53,16 @@ for message in consumer:
     try:
         event = message.value
 
+        # Late events are flagged by the Spark feature pipeline.
+        # Skip them before model inference.
+        if event.get("is_late_event", False):
+            print(
+                f"Skipping late event | "
+                f"event_id={event.get('event_id')} | "
+                f"event_time={event.get('event_time')}"
+            )
+            continue
+
         df = pd.DataFrame([event])
 
         predictions = inference.predict(df)
