@@ -1,8 +1,4 @@
 """Compare the actual process_scope implementation in kafka_stream.py with ml.features.
-
-Run from project root:
-    python .\test_spark_training_parity.py
-
 This test executes the real Spark module's pure Python state-processing functions
 without creating a SparkSession or connecting to Kafka. It models one complete
 micro-batch, so it does not validate late events arriving in later micro-batches.
