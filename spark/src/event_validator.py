@@ -66,7 +66,10 @@ def validate_ip_events(
     if not frames:
         return
 
-    pdf = pd.concat(frames, ignore_index=True)
+    pdf = pdf.sort_values(
+    "kafka_offset",
+    kind="mergesort",
+    )
 
     # Stable tie-breaking makes same-batch processing deterministic.
     pdf["_sort_time"] = pd.to_datetime(
@@ -131,9 +134,10 @@ raw = (
 
 events = (
     raw.select(
-        from_json(col("value").cast("string"), INPUT_SCHEMA).alias("event")
+        from_json(col("value"), INPUT_SCHEMA).alias("event"),
+        col("offset").alias("kafka_offset"),
     )
-    .select("event.*")
+    .select("event.*", "kafka_offset")
     .withColumn("event_time", to_timestamp(col("timestamp")))
 )
 
