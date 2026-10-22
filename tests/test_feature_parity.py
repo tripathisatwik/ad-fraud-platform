@@ -1,6 +1,12 @@
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 import pandas as pd
 from ml.features import build_features, FEATURE_COLUMNS
-
 
 def main():
     # Includes tied timestamps, exact 60s/300s/3600s boundaries,

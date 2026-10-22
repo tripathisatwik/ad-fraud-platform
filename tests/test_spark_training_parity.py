@@ -13,7 +13,8 @@ from typing import Iterator
 
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
+
 FEATURE_SOURCE = ROOT / "ml" / "features.py"
 if not FEATURE_SOURCE.exists() and (ROOT / "features_parity_fixed.py").exists():
     FEATURE_SOURCE = ROOT / "features_parity_fixed.py"
@@ -21,6 +22,7 @@ if not FEATURE_SOURCE.exists() and (ROOT / "features.py").exists():
     FEATURE_SOURCE = ROOT / "features.py"
 if not FEATURE_SOURCE.exists():
     raise FileNotFoundError(f"Could not find training feature module at {FEATURE_SOURCE}")
+
 _feature_spec = importlib.util.spec_from_file_location("project_features", FEATURE_SOURCE)
 _feature_module = importlib.util.module_from_spec(_feature_spec)
 _feature_spec.loader.exec_module(_feature_module)
