@@ -35,7 +35,7 @@ log4j.LogManager.getLogger("org.apache.spark.sql.execution.streaming").setLevel(
 )
 
 KAFKA_BOOTSTRAP_SERVERS = "ad-fraud-kafka:9093"
-KAFKA_TOPIC = "ad-events"
+KAFKA_TOPIC = "validated-ad-events"
 CHECKPOINT_LOCATION = "/tmp/ad-fraud-spark-stateful-checkpoint-v2"
 
 event_schema = StructType([
@@ -46,6 +46,7 @@ event_schema = StructType([
     StructField("device", IntegerType(), True),
     StructField("os", IntegerType(), True),
     StructField("channel", IntegerType(), True),
+    StructField("is_late_event", BooleanType(), True),
 ])
 
 FEATURE_COLUMNS = [
@@ -109,6 +110,10 @@ events = (
     .withColumn("event_time", to_timestamp(col("timestamp")))
 )
 
+accepted_events = events.filter(
+    col("is_late_event") == False
+)
+
 base_event_columns = [
     "event_id",
     "timestamp",
@@ -123,7 +128,7 @@ base_event_columns = [
 
 def make_scope(scope_type, scope_key):
     return (
-        events
+        accepted_events
         .select(
             *base_event_columns,
             lit(scope_type).alias("scope_type"),
@@ -300,11 +305,7 @@ def process_scope(
         timestamp = row["timestamp"]
         event_time = pd.Timestamp(row["event_time"])
 
-        last_click = current["last_click"]
-        is_late_event = (
-            last_click is not None
-            and event_time < pd.Timestamp(last_click)
-        )
+        is_late_event = False
 
         ip = int(row["ip"])
         app = int(row["app"])
@@ -380,11 +381,6 @@ def process_scope(
         }
         result.update(features)
         results.append(result)
-
-        # Late events are emitted for downstream filtering, but must not
-        # alter this scope's chronological state.
-        if is_late_event:
-            continue
 
         # Update state only for events in nondecreasing event-time order.
         current["count"] += 1

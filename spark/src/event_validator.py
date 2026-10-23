@@ -60,28 +60,17 @@ def validate_ip_events(
     pdf_iter: Iterator[pd.DataFrame],
     state: GroupState,
 ):
-    """Apply one strict timestamp ordering decision per IP."""
+    """Make one strict event-time ordering decision per IP."""
 
     frames = list(pdf_iter)
     if not frames:
         return
 
-    pdf = pdf.sort_values(
-    "kafka_offset",
-    kind="mergesort",
-    )
+    pdf = pd.concat(frames, ignore_index=True)
 
-    # Stable tie-breaking makes same-batch processing deterministic.
-    pdf["_sort_time"] = pd.to_datetime(
-        pdf["event_time"], errors="coerce", utc=True
-    )
-    pdf["_sort_id"] = pdf["event_id"].fillna("").astype(str)
-
-    pdf = pdf.sort_values(
-        ["_sort_time", "_sort_id"],
-        kind="mergesort",
-        na_position="last",
-    )
+    # Preserve Kafka arrival order within this micro-batch.
+    # The topic currently uses a single partition.
+    pdf = pdf.sort_values("kafka_offset", kind="mergesort")
 
     latest_ns = int(state.get[0]) if state.exists else None
     output = []
@@ -89,9 +78,10 @@ def validate_ip_events(
     for _, row in pdf.iterrows():
         timestamp = row["timestamp"]
         event_id = row["event_id"]
-        event_time = row["_sort_time"]
+        event_time = pd.to_datetime(
+            row["event_time"], errors="coerce", utc=True
+        )
 
-        # An invalid timestamp cannot safely advance IP state.
         if pd.isna(event_time):
             is_late = True
         else:
@@ -100,27 +90,35 @@ def validate_ip_events(
                 latest_ns is not None and event_ns < latest_ns
             )
 
-            # Only accepted events advance the per-IP watermark.
             if not is_late:
                 latest_ns = event_ns
 
         output.append({
-            "event_id": None if pd.isna(event_id) else str(event_id),
-            "timestamp": None if pd.isna(timestamp) else str(timestamp),
+            "event_id": (
+                None if pd.isna(event_id) else str(event_id)
+            ),
+            "timestamp": (
+                None if pd.isna(timestamp) else str(timestamp)
+            ),
             "ip": None if pd.isna(row["ip"]) else int(row["ip"]),
             "app": None if pd.isna(row["app"]) else int(row["app"]),
-            "device": None if pd.isna(row["device"]) else int(row["device"]),
+            "device": (
+                None if pd.isna(row["device"]) else int(row["device"])
+            ),
             "os": None if pd.isna(row["os"]) else int(row["os"]),
-            "channel": None if pd.isna(row["channel"]) else int(row["channel"]),
+            "channel": (
+                None if pd.isna(row["channel"]) else int(row["channel"])
+            ),
             "is_late_event": bool(is_late),
         })
 
     if latest_ns is not None:
         state.update((latest_ns,))
 
-    yield pd.DataFrame(output, columns=[
-        field.name for field in OUTPUT_SCHEMA.fields
-    ])
+    yield pd.DataFrame(
+        output,
+        columns=[field.name for field in OUTPUT_SCHEMA.fields],
+    )
 
 
 raw = (
@@ -134,7 +132,7 @@ raw = (
 
 events = (
     raw.select(
-        from_json(col("value"), INPUT_SCHEMA).alias("event"),
+        from_json(col("value").cast("string"), INPUT_SCHEMA).alias("event"),
         col("offset").alias("kafka_offset"),
     )
     .select("event.*", "kafka_offset")
