@@ -101,6 +101,30 @@ services:
       - floci-net
     restart: unless-stopped
 
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: ad-fraud-api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID:-test}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY:-test}"
+      AWS_DEFAULT_REGION: "${AWS_DEFAULT_REGION:-us-east-1}"
+      AWS_ENDPOINT_URL: "http://floci:4566"
+      S3_BUCKET: "${S3_BUCKET:-ad-fraud-data}"
+      S3_PREFIX: "predictions/"
+      API_MAX_OBJECTS: "100"
+      API_MAX_RECORDS: "10000"
+      CORS_ORIGINS: "${CORS_ORIGINS:-*}"
+    depends_on:
+      - s3-sink
+    networks:
+      - ad-fraud-net
+      - floci-net
+    restart: unless-stopped
+
 networks:
   ad-fraud-net:
     name: ad-fraud-net
