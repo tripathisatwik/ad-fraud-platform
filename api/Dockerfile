@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /opt/app
 
-RUN pip install --no-cache-dir fastapi "uvicorn[standard]" boto3
+RUN pip install --no-cache-dir fastapi uvicorn boto3
 
 COPY api/app.py ./app.py
 
