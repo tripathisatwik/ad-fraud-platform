@@ -1,0 +1,129 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AdShield | Fraud Analytics</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-icon">AF</span><span><b>AdShield</b><small>FRAUD INTELLIGENCE</small></span></div>
+    <p class="nav-label">WORKSPACE</p>
+    <div class="nav-active">▦ &nbsp; Analytics overview</div>
+    <div class="side-status"><i></i> Local analytics service</div>
+    <p class="side-foot">Development workspace<br>Enforcement actions are not connected.</p>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">TRAFFIC QUALITY / OVERVIEW</p>
+        <h1>Ad Fraud Analytics</h1>
+        <p class="muted">Understand risk, spot unusual activity, investigate predictions.</p>
+      </div>
+      <div class="top-actions">
+        <span id="connection" class="pill">Connecting…</span>
+        <button id="refresh" class="primary">↻ Refresh data</button>
+      </div>
+    </header>
+
+    <section class="filters panel">
+      <label>Time range
+        <select id="timeRange">
+          <option value="24">Last 24 hours</option>
+          <option value="72">Last 3 days</option>
+          <option value="168">Last 7 days</option>
+          <option value="all" selected>All loaded records</option>
+        </select>
+      </label>
+      <label>Minimum risk score
+        <select id="riskFilter">
+          <option value="0">All scores</option>
+          <option value="0.05">≥ 5%</option>
+          <option value="0.15">≥ 15%</option>
+          <option value="0.5">≥ 50%</option>
+        </select>
+      </label>
+      <label>Campaign / publisher
+        <select disabled><option>Not in current data</option></select>
+      </label>
+      <button id="reset" class="secondary">Reset filters</button>
+    </section>
+
+    <section class="section-head">
+      <div><p class="eyebrow">EXECUTIVE SUMMARY</p><h2>Traffic risk at a glance</h2></div>
+      <span id="freshness" class="muted small">Waiting for API data…</span>
+    </section>
+
+    <section class="kpis">
+      <article class="panel kpi">
+        <div class="kpi-head"><span>INVALID CLICK RATE <b>(PROXY)</b></span><span id="riskBadge" class="risk">—</span></div>
+        <strong id="flagRate" class="metric">—</strong>
+        <p id="rateCaption">Flagged predictions / loaded records</p>
+        <footer>Estimated financial impact: <b>Unavailable</b></footer>
+      </article>
+      <article class="panel kpi">
+        <div class="kpi-head"><span>FLAGGED PREDICTIONS</span><span class="symbol red">!</span></div>
+        <strong id="flagged" class="metric">—</strong>
+        <p id="flaggedCaption">Model outputs, not confirmed fraud</p>
+        <footer>Change vs previous period: <b>Unavailable</b></footer>
+      </article>
+      <article class="panel kpi">
+        <div class="kpi-head"><span>AVERAGE RISK SCORE</span><span class="symbol purple">⌁</span></div>
+        <strong id="average" class="metric">—</strong>
+        <div class="meter"><span id="averageMeter"></span></div>
+        <footer>Maximum score: <b id="maximum">—</b></footer>
+      </article>
+      <article class="panel kpi">
+        <div class="kpi-head"><span>SPEND SAVED / PROTECTED</span><span class="symbol green">$</span></div>
+        <strong class="metric">N/A</strong>
+        <p>Requires verified blocking and click-cost data.</p>
+        <footer>Spend at risk / lost: <b>Unavailable</b></footer>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <article class="panel chart-panel">
+        <div class="panel-head"><div><h3>Traffic & risk trend</h3><p>Hourly predictions versus flagged predictions</p></div><span class="tag">HOURLY</span></div>
+        <div class="legend"><span><i class="blue-dot"></i>Total predictions</span><span><i class="red-dot"></i>Flagged predictions</span></div>
+        <div id="trend" class="chart"><p class="muted">Loading trend…</p></div>
+        <p id="trendNote" class="note">Counts represent stored prediction records.</p>
+      </article>
+      <article class="panel chart-panel">
+        <div class="panel-head"><div><h3>Fraud reason distribution</h3><p>Classification requires validated reason labels</p></div><span class="tag">REASONS</span></div>
+        <div class="unavailable">
+          <div class="search-icon">⌕</div>
+          <b>Reason data not available yet</b>
+          <p>Current records contain model scores and event attributes, but no confirmed reason labels. Botnet, proxy and browser categories will not be guessed.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="panel-head table-head">
+        <div><p class="eyebrow">INVESTIGATION QUEUE</p><h3>Highest-risk predictions</h3><p>Select a record to inspect its available evidence.</p></div>
+        <div class="table-actions"><span id="recordCount" class="muted small">— records</span><button id="export" class="secondary">⇩ Export CSV</button></div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>EVENT ID</th><th>TIMESTAMP</th><th>IP</th><th>DEVICE / APP</th><th>RISK SCORE</th><th>PREDICTION</th><th></th></tr></thead>
+          <tbody id="records"><tr><td colspan="7" class="empty">Loading records…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="table-bottom"><span id="tableNote">Showing API-returned records only.</span><button id="more" class="link-button">Show more →</button></div>
+    </section>
+    <footer class="page-footer">Risk bands: Normal &lt; 5% · Warning 5–15% · Critical &gt; 15% <span>AdShield Analytics · Local development</span></footer>
+  </main>
+
+  <div id="backdrop" class="backdrop" hidden></div>
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <header class="drawer-head"><div><p class="eyebrow">EVENT INVESTIGATION</p><h2 id="drawerTitle">Prediction details</h2></div><button id="closeDrawer" class="close">×</button></header>
+    <div id="details" class="details"></div>
+    <footer class="drawer-foot"><button id="exportOne" class="secondary">Export this record</button><p>Blacklist and campaign-pause actions require an enforcement service, which is not connected.</p></footer>
+  </aside>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
