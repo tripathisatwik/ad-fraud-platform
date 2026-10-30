@@ -125,6 +125,22 @@ services:
       - floci-net
     restart: unless-stopped
 
+  analytics:
+    build:
+      context: .
+      dockerfile: analytics/Dockerfile
+    container_name: ad-fraud-analytics
+    ports:
+      - "${ANALYTICS_PORT:-8502}:8502"
+    environment:
+      API_BASE_URL: "http://api:8000"
+      ANALYTICS_PORT: "8502"
+    depends_on:
+      - api
+    networks:
+      - ad-fraud-net
+    restart: unless-stopped
+
 networks:
   ad-fraud-net:
     name: ad-fraud-net
